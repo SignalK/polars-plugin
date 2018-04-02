@@ -31,9 +31,17 @@ module.exports = function (app) {
 
   plugin.start = function (props) {
     parsedPolars = (props.polars || []).map(polar => {
-      return parse(polar.data || '', polar.delimiter || ';')
+      const result = parse(
+        polar.data || '',
+        polar.delimiter || ';',
+        twsConversions[polar.trueWindSpeedUnit || 'metersPerSecond'],
+        twsConversions[polar.speedThroughWaterUnit || 'metersPerSecond']
+      )
+      result.trueWindSpeedLabelUnit = polar.trueWindSpeedUnit
+      result.speedThroughWaterLabelUnit = polar.speedThroughWaterUnit
+      return result
     })
-    console.log(JSON.stringify(parsedPolars,null, 2))
+    console.log(JSON.stringify(parsedPolars, null, 2))
   }
 
   plugin.stop = function () {}
@@ -58,9 +66,10 @@ module.exports = function (app) {
             data: {
               type: 'string',
               title: 'Polar data',
-              description: 'First row is header and specifies the True Wind Speeds for columns. First column is True Wind Angle in degrees.',
-              default: 'twa/tws;6;8;10;12;14;16;20\n' +
-                '52;5.33;6.29;6.9;7.13;7.23;7.28;7.32\n' +
+              description: 'First row is header and specifies the True Wind Speeds for columns. First column is True Wind Angle in degrees. # starts a comment',
+              default: '#this line is a comment\n' +
+                'twa/tws;6;8;10;12;14;16;20\n' +
+                '52;5.33;6.29;6.9;7.13;7.23;7.28;7.32#comment here\n' +
                 '60;5.65;6.61;7.1;7.33;7.43;7.49;7.53\n' +
                 '75;5.96;6.84;7.26;7.53;7.74;7.85;7.95\n' +
                 '90;5.96;6.87;7.29;7.58;7.86;8.13;8.43\n' +
@@ -73,19 +82,21 @@ module.exports = function (app) {
               type: 'string',
               title: 'Detailed description'
             },
-            twsUnit: {
+            trueWindSpeedUnit: {
               type: 'string',
               title: 'True Wind Speed Unit',
               required: true,
-              default: 'knots',
-              enum: ['metersPerSecond', 'knots']
+              default: 'kn',
+              enum: ['mps', 'kn'],
+              enumNames: ['Meters/second', 'Knots']
             },
-            stwUnit: {
+            speedThroughWaterUnit: {
               type: 'string',
               title: 'Speed Through Water Unit',
               required: true,
-              default: 'knots',
-              enum: ['metersPerSecond', 'knots']
+              default: 'kn',
+              enum: ['mps', 'kn'],
+              enumNames: ['Meters/second', 'Knots']
             },
             delimiter: {
               type: 'string',
@@ -104,10 +115,10 @@ module.exports = function (app) {
   plugin.uiSchema = {
     polars: {
       items: {
-        twsUnit: {
+        trueWindSpeedUnit: {
           'ui:widget': 'radio'
         },
-        stwUnit: {
+        speedThroughWaterUnit: {
           'ui:widget': 'radio'
         },
         data: {
@@ -122,20 +133,34 @@ module.exports = function (app) {
   return plugin
 }
 
-function parse (polarTxt, delimiter) {
-  const parsed = csvParse(polarTxt, { delimiter })
+function parse (
+  polarTxt,
+  delimiter,
+  twsToMetersPerSecond = s => s,
+  stwToMetersPerSecond = s => s
+) {
+  const parsed = csvParse(polarTxt, { delimiter, comment: '#' })
   console.log(parsed)
   const result = {
-    trueWindAngles: parsed.slice(1).map(row => Number(row[0])),
-    polars: parsed[0]
-      .slice(1)
-      .map(trueWindSpeed => ({ trueWindSpeed, polarSpeeds: [] }))
+    trueWindAngles: parsed.slice(1).map(row => toRadian(row[0])),
+    trueWindAngleLabels: parsed.slice(1).map(row => Number(row[0])),
+    polars: parsed[0].slice(1).map(trueWindSpeed => ({
+      trueWindSpeed: twsToMetersPerSecond(trueWindSpeed),
+      trueWindSpeedLabel: trueWindSpeed,
+      polarSpeeds: [],
+      polarSpeedLabels: []
+    }))
   }
   parsed.slice(1).forEach(row => {
     row.slice(1).forEach((speed, index) => {
-      result.polars
-      result.polars[index].polarSpeeds.push(speed)
+      result.polars[index].polarSpeeds.push(stwToMetersPerSecond(speed))
+      result.polars[index].polarSpeedLabels.push(speed)
     })
   })
   return result
 }
+
+const toRadian = deg => deg / 180 * Math.PI
+
+const MPS_PER_KNOT = 0.514444
+const twsConversions = { mps: s => s, kn: s => s * MPS_PER_KNOT }
