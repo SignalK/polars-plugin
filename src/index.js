@@ -14,6 +14,7 @@
  */
 
 const csvParse = require('csv-parse/lib/sync')
+const uuidv4 = require('uuid/v4')
 
 module.exports = function (app) {
   const error =
@@ -30,16 +31,26 @@ module.exports = function (app) {
   let parsedPolars = []
 
   plugin.start = function (props) {
+    if (fillUuids(props)) {
+      debug('Updated at least one uuid')
+      app.savePluginOptions(props, () => {})
+    }
     parsedPolars = (props.polars || []).map(polar => {
-      const result = parse(
-        polar.data || '',
-        polar.delimiter || ';',
-        twsConversions[polar.trueWindSpeedUnit || 'metersPerSecond'],
-        twsConversions[polar.speedThroughWaterUnit || 'metersPerSecond'],
-        debug
-      )
-      result.trueWindSpeedLabelUnit = polar.trueWindSpeedUnit
-      result.speedThroughWaterLabelUnit = polar.speedThroughWaterUnit
+      const { uuid, name, description } = polar
+      const result = {
+        uuid,
+        name,
+        description,
+        trueWindSpeedLabelUnit: polar.trueWindSpeedUnit,
+        speedThroughWaterLabelUnit: polar.speedThroughWaterUnit,
+        ...parse(
+          polar.data || '',
+          polar.delimiter || ';',
+          twsConversions[polar.trueWindSpeedUnit || 'metersPerSecond'],
+          twsConversions[polar.speedThroughWaterUnit || 'metersPerSecond'],
+          debug
+        )
+      }
       return result
     })
     debug(JSON.stringify(parsedPolars, null, 2))
@@ -78,6 +89,10 @@ module.exports = function (app) {
                 '120;5.35;6.49;7.16;7.55;7.92;8.34;9\n' +
                 '135;4.83;5.91;6.79;7.28;7.62;8;8.84\n' +
                 '150;4.09;5.16;6.08;6.84;7.28;7.61;8.34'
+            },
+            uuid: {
+              type: 'string',
+              default: 'Server will assign the uuid on save'
             },
             description: {
               type: 'string',
@@ -122,6 +137,9 @@ module.exports = function (app) {
         speedThroughWaterUnit: {
           'ui:widget': 'radio'
         },
+        uuid: {
+          'ui:readonly': true
+        },
         data: {
           'ui:widget': 'textarea',
           'ui:options': {
@@ -146,7 +164,7 @@ function parse (
   const result = {
     trueWindAngles: parsed.slice(1).map(row => toRadian(row[0])),
     trueWindAngleLabels: parsed.slice(1).map(row => Number(row[0])),
-    polars: parsed[0].slice(1).map(trueWindSpeed => ({
+    polarData: parsed[0].slice(1).map(trueWindSpeed => ({
       trueWindSpeed: twsToMetersPerSecond(trueWindSpeed),
       trueWindSpeedLabel: trueWindSpeed,
       polarSpeeds: [],
@@ -155,8 +173,8 @@ function parse (
   }
   parsed.slice(1).forEach(row => {
     row.slice(1).forEach((speed, index) => {
-      result.polars[index].polarSpeeds.push(stwToMetersPerSecond(speed))
-      result.polars[index].polarSpeedLabels.push(speed)
+      result.polarData[index].polarSpeeds.push(stwToMetersPerSecond(speed))
+      result.polarData[index].polarSpeedLabels.push(speed)
     })
   })
   return result
@@ -166,3 +184,14 @@ const toRadian = deg => deg / 180 * Math.PI
 
 const MPS_PER_KNOT = 0.514444
 const twsConversions = { mps: s => s, kn: s => s * MPS_PER_KNOT }
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+function fillUuids (options) {
+  return options.polars.reduce((acc, polar) => {
+    if (!polar.uuid || !UUID_REGEX.test(polar.uuid)) {
+      polar.uuid = uuidv4()
+      return true
+    }
+    return acc
+  }, false)
+}

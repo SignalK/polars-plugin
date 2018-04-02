@@ -17,7 +17,8 @@
   ],
   "license": "Apache-20",
   "dependencies": {
-    "csv-parse": "^2.1.0"
+    "csv-parse": "^2.1.0",
+    "uuid": "^3.2.1"
   },
   "devDependencies": {
     "prettier-standard": "^8.0.0"
