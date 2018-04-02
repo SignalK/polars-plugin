@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+const csvParse = require('csv-parse/lib/sync')
+
 module.exports = function (app) {
   const error =
     app.error ||
@@ -25,8 +27,14 @@ module.exports = function (app) {
       console.log(msg)
     })
   const plugin = {}
+  let parsedPolars = []
 
-  plugin.start = function (props) {}
+  plugin.start = function (props) {
+    parsedPolars = (props.polars || []).map(polar => {
+      return parse(polar.data || '', polar.delimiter || ';')
+    })
+    console.log(JSON.stringify(parsedPolars,null, 2))
+  }
 
   plugin.stop = function () {}
 
@@ -112,4 +120,22 @@ module.exports = function (app) {
     }
   }
   return plugin
+}
+
+function parse (polarTxt, delimiter) {
+  const parsed = csvParse(polarTxt, { delimiter })
+  console.log(parsed)
+  const result = {
+    trueWindAngles: parsed.slice(1).map(row => Number(row[0])),
+    polars: parsed[0]
+      .slice(1)
+      .map(trueWindSpeed => ({ trueWindSpeed, polarSpeeds: [] }))
+  }
+  parsed.slice(1).forEach(row => {
+    row.slice(1).forEach((speed, index) => {
+      result.polars
+      result.polars[index].polarSpeeds.push(speed)
+    })
+  })
+  return result
 }
