@@ -35,13 +35,14 @@ module.exports = function (app) {
         polar.data || '',
         polar.delimiter || ';',
         twsConversions[polar.trueWindSpeedUnit || 'metersPerSecond'],
-        twsConversions[polar.speedThroughWaterUnit || 'metersPerSecond']
+        twsConversions[polar.speedThroughWaterUnit || 'metersPerSecond'],
+        debug
       )
       result.trueWindSpeedLabelUnit = polar.trueWindSpeedUnit
       result.speedThroughWaterLabelUnit = polar.speedThroughWaterUnit
       return result
     })
-    console.log(JSON.stringify(parsedPolars, null, 2))
+    debug(JSON.stringify(parsedPolars, null, 2))
   }
 
   plugin.stop = function () {}
@@ -137,10 +138,11 @@ function parse (
   polarTxt,
   delimiter,
   twsToMetersPerSecond = s => s,
-  stwToMetersPerSecond = s => s
+  stwToMetersPerSecond = s => s,
+  debug
 ) {
   const parsed = csvParse(polarTxt, { delimiter, comment: '#' })
-  console.log(parsed)
+  debug(parsed)
   const result = {
     trueWindAngles: parsed.slice(1).map(row => toRadian(row[0])),
     trueWindAngleLabels: parsed.slice(1).map(row => Number(row[0])),
