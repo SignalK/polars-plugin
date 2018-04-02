@@ -1,0 +1,23 @@
+{
+  "name": "@signalk/polars-plugin",
+  "version": "0.0.1",
+  "description": "Signal K Node Server plugin to handle polars",
+  "main": "src/index.js",
+  "keywords": [
+    "signalk-node-server-plugin"
+  ],
+  "repository": "https://github.com/SignalK/polars-plugin",
+  "scripts": {
+    "format": "prettier-standard 'src/**/*.js'"
+  },
+  "contributors": [
+    {
+      "name": "Teppo Kurki"
+    }
+  ],
+  "license": "Apache-20",
+  "dependencies": {},
+  "devDependencies": {
+    "prettier-standard": "^8.0.0"
+  }
+}
