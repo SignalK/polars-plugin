@@ -1,3 +1,5 @@
+# Work In Progress, does not work correctly yet
+
 # polars-plugin
 
 Plugin + webapp for sailboat polar handling:
