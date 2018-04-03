@@ -4,7 +4,8 @@
   "description": "Signal K Node Server plugin to handle polars",
   "main": "src/index.js",
   "keywords": [
-    "signalk-node-server-plugin"
+    "signalk-node-server-plugin",
+    "signalk-webapp"
   ],
   "repository": "https://github.com/SignalK/polars-plugin",
   "scripts": {

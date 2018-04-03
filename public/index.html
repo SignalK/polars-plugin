@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>Signal K Polars</title>
+  <script src="d3.min.js"></script>
+</head>
+<style>
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden
+  }
+
+  svg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    font-family: sans-serif;
+    background-image: linear-gradient(bottom, rgb(87, 87, 87) 9%, rgb(0, 0, 0) 50%);
+    background-image: -o-linear-gradient(bottom, rgb(87, 87, 87) 9%, rgb(0, 0, 0) 50%);
+    background-image: -moz-linear-gradient(bottom, rgb(87, 87, 87) 9%, rgb(0, 0, 0) 50%);
+    background-image: -webkit-linear-gradient(bottom, rgb(87, 87, 87) 9%, rgb(0, 0, 0) 50%);
+    background-image: -ms-linear-gradient(bottom, rgb(87, 87, 87) 9%, rgb(0, 0, 0) 50%);
+
+    background-image: -webkit-gradient( linear,
+    left bottom,
+    left top,
+    color-stop(0.09, rgb(87, 87, 87)),
+    color-stop(0.5, rgb(0, 0, 0)));
+  }
+
+  g {
+    fill: none;
+    stroke: white;
+  }
+</style>
+
+<body>
+  <div id="polar"></div>
+</body>
+<script>
+  const size = 800
+  const svg = d3.select('#polar')
+    .append('svg:svg')
+    .attr('viewBox', "0 0 " + size + " " + size)
+    .attr('preserveAspectRatio', "xMidYMid meet")
+
+  const r = d3.scaleLinear().domain([0, 10]).range([0, 300]);
+
+  const gr = svg.append('g')
+    .style('stroke-dasharray', 2)
+    .attr('transform', 'translate(400,400)')
+    .selectAll('g')
+    .data(r.ticks(5).slice(1))
+    .enter().append('g');
+  gr.append('circle').attr('r', r);
+
+  gr.append('text')
+    .style('stroke-dasharray', 0)
+    .attr('y', function (d) { return -r(d) - 4; })
+    .style('text-anchor', 'middle')
+    .text(function (d) { return d % 2 === 0 ? d + 'kts' : ''; });
+
+  const polarCurves = svg.append('g')
+
+  fetch(window.location.protocol + '//' + window.location.host + '/signalk/v1/api/vessels/self/polars/active')
+    .then(function (response) {
+      return response.json()
+    })
+    .then(function (polar) {
+      const windDirections = svg.append('g')
+        .style('stroke-dasharray', 2)
+        .attr('transform', 'translate(400,400)')
+        .attr('class', 'a axis')
+        .selectAll('g')
+        .data([45, 52, 60, 75, 90, 110, 120, 135, 150, 165].map(function (d) { return -d - 90; }))
+        .enter().append('g')
+        .attr('transform', function (d) { return 'rotate(' + d + ')'; });
+      windDirections.append('line')
+        .attr('x1', r(1))
+        .attr('x2', 300);
+
+      polar.polarData.forEach(polarData => {
+        const polarLine = d3.radialLine()
+          .radius((d, i) => {
+            return polarData.polarSpeeds[i] / 3 * 200
+          }).angle(d => {
+            return -d
+          }).curve(d3.curveCardinal)
+
+        polarCurves.append('g')
+          .attr('transform', 'translate(400,400)')
+          .attr('fill', 'none')
+          .append('path')
+          .datum(polar.trueWindAngles)
+          .attr('d', polarLine)
+      })
+    });
+
+</script>
+
+</html>
