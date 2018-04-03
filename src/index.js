@@ -149,6 +149,39 @@ module.exports = function (app) {
       }
     }
   }
+
+  plugin.signalKApiRoutes = router => {
+    router.get('/vessels/self/polars', (req, res) => {
+      res.json(
+        parsedPolars.reduce((acc, polar) => {
+          acc[polar.uuid] = polar
+          return acc
+        }, {})
+      )
+    })
+    router.get('/vessels/self/polars/active', (req, res) => {
+      if (!parsedPolars || parsedPolars.length < 1) {
+        res.status(404)
+        res.end()
+        return
+      }
+      res.json(parsedPolars[0])
+    })
+    router.get('/vessels/self/polars/:idOrName', (req, res) => {
+      const result = parsedPolars.find(
+        polar =>
+          polar.uuid == req.params.idOrName ||
+          polar.name === req.params.idOrName
+      )
+      if (result) {
+        res.json(result)
+      } else {
+        res.status(404)
+        res.end()
+      }
+    })
+    return router
+  }
   return plugin
 }
 
