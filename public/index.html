@@ -82,9 +82,25 @@
         .data([45, 52, 60, 75, 90, 110, 120, 135, 150, 165].map(function (d) { return -d - 90; }))
         .enter().append('g')
         .attr('transform', function (d) { return 'rotate(' + d + ')'; });
+
       windDirections.append('line')
         .attr('x1', r(1))
         .attr('x2', 300);
+
+      const xaxis = function (sel) {
+        sel.attr('x', 300 + 6)
+          .attr('dy', '.35em')
+          .style('text-anchor', function (d) { return 'end'})
+          .attr('transform', function (d) { console.log(d); return d < 270 && d > 90 ? 'rotate(180 ' + (300 + 6) + ', 0)' : null; })
+          .text(function (d) { return -(d + 90) + '°'; });
+      };
+
+      windDirections.append('g')
+        .style('stroke-dasharray', 0)
+        .attr('transform', 'rotate(180, 306,0)')
+        .append('text')
+        .attr('class', 'xlabel').call(xaxis);
+
 
       polar.polarData.forEach(polarData => {
         const polarLine = d3.radialLine()
