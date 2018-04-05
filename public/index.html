@@ -105,7 +105,7 @@
       polar.polarData.forEach(polarData => {
         const polarLine = d3.radialLine()
           .radius((d, i) => {
-            return polarData.polarSpeeds[i] / 3 * 200
+            return r(polarData.polarSpeeds[i] / MPS_PER_KNOT)
           }).angle(d => {
             return -d
           }).curve(d3.curveCardinal)
@@ -119,6 +119,7 @@
       })
     });
 
+    const MPS_PER_KNOT = 0.514444
 </script>
 
 </html>
