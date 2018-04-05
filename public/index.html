@@ -53,6 +53,15 @@
 
   const r = d3.scaleLinear().domain([0, 10]).range([0, 300]);
 
+  svg.append('g')
+    .attr('transform', 'translate(400,400)')
+    .append('g')
+    .attr('id', 'markerG')
+    .append('circle').attr('r', '5').attr('fill', 'red').attr('id', 'marker')
+
+  const marker = document.getElementById('marker')
+  const markerG = document.getElementById('markerG')
+
   const gr = svg.append('g')
     .style('stroke-dasharray', 2)
     .attr('transform', 'translate(400,400)')
@@ -90,7 +99,7 @@
       const xaxis = function (sel) {
         sel.attr('x', 300 + 6)
           .attr('dy', '.35em')
-          .style('text-anchor', function (d) { return 'end'})
+          .style('text-anchor', function (d) { return 'end' })
           .attr('transform', function (d) { console.log(d); return d < 270 && d > 90 ? 'rotate(180 ' + (300 + 6) + ', 0)' : null; })
           .text(function (d) { return -(d + 90) + '°'; });
       };
@@ -119,7 +128,26 @@
       })
     });
 
-    const MPS_PER_KNOT = 0.514444
+  const MPS_PER_KNOT = 0.514444
+
+
+  const ws = new WebSocket((window.location.protocol === 'https:' ? 'wss' : 'ws') + "://" + window.location.host + "/signalk/v1/stream");
+  ws.onmessage = function (event) {
+    const msg = JSON.parse(event.data)
+    msg.updates && msg.updates.forEach(update => {
+      update.values && update.values.forEach(pathValue => {
+        switch (pathValue.path) {
+          case 'navigation.speedOverGround':
+            marker.setAttribute('cx', r(pathValue.value / MPS_PER_KNOT))
+            break;
+          case 'environment.wind.angleTrueWater':
+          console.log(pathValue.value)
+          markerG.setAttribute('transform', `rotate(${Math.abs(pathValue.value) / Math.PI * -180 -90})`)
+            break;
+        }
+      })
+    })
+  }
 </script>
 
 </html>
