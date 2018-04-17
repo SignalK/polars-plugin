@@ -240,7 +240,7 @@ function parse (
   debug(parsed)
   const result = {
     trueWindAngles: parsed.slice(1).map(row => toRadian(row[0])),
-    trueWindAngleLabels: parsed.slice(1).map(row => Number(row[0])),
+    trueWindAngleLabels: parsed.slice(1).map(row => '' + row[0]),
     polarData: parsed[0].slice(1).map(trueWindSpeed => ({
       trueWindSpeed: twsToMetersPerSecond(trueWindSpeed),
       trueWindSpeedLabel: trueWindSpeed,
