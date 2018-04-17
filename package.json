@@ -9,7 +9,8 @@
   ],
   "repository": "https://github.com/SignalK/polars-plugin",
   "scripts": {
-    "format": "prettier-standard 'src/**/*.js'"
+    "format": "prettier-standard 'src/**/*.js'",
+    "test": "mocha"
   },
   "contributors": [
     {
@@ -18,10 +19,12 @@
   ],
   "license": "Apache-20",
   "dependencies": {
+    "baconjs": "^1.0.1",
     "csv-parse": "^2.1.0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {
+    "mocha": "^5.0.5",
     "prettier-standard": "^8.0.0"
   }
 }

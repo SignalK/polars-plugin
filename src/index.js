@@ -15,6 +15,7 @@
 
 const csvParse = require('csv-parse/lib/sync')
 const uuidv4 = require('uuid/v4')
+const { polarSpeedFromPolars } = require('./performancecalculations')
 
 module.exports = function (app) {
   const error =
@@ -29,12 +30,17 @@ module.exports = function (app) {
     })
   const plugin = {}
   let parsedPolars = []
+  let unsubscribes = []
+  let sendsPolarData = false
+  let started = false
 
   plugin.start = function (props) {
     if (fillUuids(props)) {
       debug('Updated at least one uuid')
       app.savePluginOptions(props, () => {})
     }
+
+    sendsPolarData = false
     parsedPolars = (props.polars || []).map(polar => {
       const { uuid, name, description } = polar
       const result = {
@@ -53,10 +59,48 @@ module.exports = function (app) {
       }
       return result
     })
+    if (parsedPolars.length > 0) {
+      unsubscribes = require('./streamutilities').mapBaconjs(
+        {
+          keys: [
+            'environment.wind.speedTrue',
+            'environment.wind.angleTrueWater'
+          ],
+          timeouts: [],
+          calculation: polarSpeedFromPolars(parsedPolars[0])
+        },
+        app.streambundle,
+        value => {
+          sendsPolarData = true
+          app.handleMessage(null, {
+            updates: [
+              {
+                values: [
+                  { path: 'performance.polarSpeed', value: value || null }
+                ]
+              }
+            ]
+          })
+        },
+        app.debug
+      )
+    }
     debug(JSON.stringify(parsedPolars, null, 2))
+    started = true
   }
 
-  plugin.stop = function () {}
+  plugin.stop = function () {
+    unsubscribes.forEach(f => f())
+    started = false
+  }
+
+  plugin.statusMessage = function () {
+    return started
+      ? sendsPolarData
+          ? 'Sending performance data is working.'
+          : 'No performance messages produced.'
+      : ''
+  }
 
   plugin.id = 'polars'
   plugin.name = 'Polars'
