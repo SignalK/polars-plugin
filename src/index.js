@@ -107,17 +107,23 @@ module.exports = function (app) {
   plugin.description = 'Polar handling'
 
   plugin.schema = {
+    type: 'object',
     properties: {
       polars: {
         type: 'array',
         title: 'Polars',
         items: {
           type: 'object',
+          required: [
+            'name',
+            'trueWindSpeedUnit',
+            'speedThroughWaterUnit',
+            'delimiter'
+          ],
           properties: {
             name: {
               type: 'string',
-              title: 'Descriptive name for the polar',
-              required: true
+              title: 'Descriptive name for the polar'
             },
             data: {
               type: 'string',
@@ -145,7 +151,6 @@ module.exports = function (app) {
             trueWindSpeedUnit: {
               type: 'string',
               title: 'True Wind Speed Unit',
-              required: true,
               default: 'kn',
               enum: ['mps', 'kn'],
               enumNames: ['Meters/second', 'Knots']
@@ -153,7 +158,6 @@ module.exports = function (app) {
             speedThroughWaterUnit: {
               type: 'string',
               title: 'Speed Through Water Unit',
-              required: true,
               default: 'kn',
               enum: ['mps', 'kn'],
               enumNames: ['Meters/second', 'Knots']
@@ -161,10 +165,9 @@ module.exports = function (app) {
             delimiter: {
               type: 'string',
               title: 'Delimiter character',
-              default: 'semicolon',
+              default: ';',
               enum: [';', ',', '\t'],
-              enumNames: ['semicolon', 'comma', 'tab'],
-              default: ';'
+              enumNames: ['semicolon', 'comma', 'tab']
             }
           }
         }
